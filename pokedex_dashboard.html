@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon Battle Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ══ RESET & ROOT ═══════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --navy:#0b1a3b;
+  --navy2:#0d2050;
+  --navy3:#112568;
+  --panel:#0e1f4d;
+  --card:#132560;
+  --card2:#1a2f6e;
+  --border:rgba(100,160,255,0.2);
+  --border2:rgba(100,160,255,0.08);
+  --blue:#4a9eff;
+  --blue2:#63b3ff;
+  --blue3:#a8d4ff;
+  --gold:#ffd700;
+  --text:#e8f0ff;
+  --muted:#6a85b8;
+  --accent:#00e5ff;
+}
+body{
+  font-family:'Exo 2',sans-serif;
+  background:var(--navy);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:220px 1fr;
+  grid-template-rows:64px 1fr;
+}
+
+/* ══ TOPBAR ══════════════════════════════════════════════════════════════ */
+.topbar{
+  grid-column:1/-1;
+  background:linear-gradient(90deg,#06103a 0%,#091847 50%,#06103a 100%);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  padding:0 20px;
+  position:relative;
+  z-index:10;
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--blue),var(--accent),var(--blue),transparent);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-ball{
+  width:38px;height:38px;border-radius:50%;
+  background:conic-gradient(#ff4444 0deg 180deg,#eee 180deg 360deg);
+  border:2px solid rgba(255,255,255,0.3);
+  position:relative;flex-shrink:0;
+  animation:spin 12s linear infinite;
+  box-shadow:0 0 14px rgba(255,100,100,0.4);
+}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.logo-ball::after{
+  content:'';position:absolute;top:50%;left:0;right:0;height:2px;
+  background:rgba(255,255,255,0.4);transform:translateY(-50%);
+}
+.logo-ball::before{
+  content:'';position:absolute;top:50%;left:50%;
+  width:10px;height:10px;border-radius:50%;
+  background:#eee;border:2px solid rgba(0,0,0,0.2);
+  transform:translate(-50%,-50%);z-index:1;
+}
+.logo-text{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--blue2);letter-spacing:3px;text-transform:uppercase;
+  line-height:1.4;
+}
+.logo-text span{display:block;font-size:8px;color:var(--muted);letter-spacing:2px;}
+.topbar-title{
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
+  background:linear-gradient(90deg,#4a9eff,#00e5ff,#a8d4ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;letter-spacing:3px;margin-left:8px;
+}
+.topbar-right{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.tb-badge{
+  padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;
+  border:1px solid var(--border);color:var(--blue3);
+  background:rgba(74,158,255,0.08);letter-spacing:1px;
+}
+.btn-export{
+  padding:6px 16px;border-radius:20px;font-size:11px;font-weight:700;
+  border:1px solid rgba(0,229,255,0.4);color:#00e5ff;
+  background:rgba(0,229,255,0.08);cursor:pointer;
+  font-family:'Exo 2',sans-serif;letter-spacing:1px;text-transform:uppercase;
+  transition:all .25s;
+}
+.btn-export:hover{background:rgba(0,229,255,0.18);box-shadow:0 0 14px rgba(0,229,255,0.3);}
+
+/* ══ SIDEBAR ═════════════════════════════════════════════════════════════ */
+.sidebar{
+  background:linear-gradient(180deg,#08163a 0%,#0b1c48 100%);
+  border-right:1px solid var(--border);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+.sidebar-search{padding:12px 14px;border-bottom:1px solid var(--border2);}
+.search-box{
+  width:100%;padding:7px 12px;border-radius:20px;
+  background:rgba(74,158,255,0.1);border:1px solid var(--border);
+  color:var(--text);font-family:'Exo 2',sans-serif;font-size:12px;
+  outline:none;transition:border .2s;
+}
+.search-box::placeholder{color:var(--muted);}
+.search-box:focus{border-color:var(--blue);}
+
+.sidebar-list{flex:1;overflow-y:auto;padding:6px 0;}
+.sidebar-list::-webkit-scrollbar{width:3px;}
+.sidebar-list::-webkit-scrollbar-thumb{background:rgba(74,158,255,0.25);border-radius:2px;}
+
+.list-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px;cursor:pointer;
+  transition:background .2s;position:relative;
+  font-size:13px;color:var(--muted);font-weight:500;
+}
+.list-item:hover{background:rgba(74,158,255,0.08);color:var(--text);}
+.list-item.active{
+  background:linear-gradient(90deg,rgba(74,158,255,0.18),rgba(74,158,255,0.05));
+  color:var(--blue2);font-weight:700;
+}
+.list-item.active::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--blue),var(--accent));
+  border-radius:0 2px 2px 0;
+}
+.list-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  border:1px solid currentColor;opacity:.4;transition:opacity .2s;
+}
+.list-item.active .list-dot,.list-item:hover .list-dot{opacity:1;}
+.list-item.active .list-dot{background:var(--blue);border-color:var(--blue);box-shadow:0 0 6px var(--blue);}
+.list-num{font-family:'Orbitron',monospace;font-size:9px;margin-left:auto;opacity:.4;}
+
+/* ══ MAIN CONTENT ════════════════════════════════════════════════════════ */
+.main{
+  overflow:hidden;display:flex;flex-direction:column;
+  background:linear-gradient(135deg,#0d1f4a 0%,#0f2255 50%,#0c1b42 100%);
+  position:relative;
+}
+/* background hex pattern */
+.main::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='30,2 58,17 58,47 30,62 2,47 2,17' fill='none' stroke='rgba(74,158,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:60px 52px;pointer-events:none;
+}
+
+/* HERO SECTION */
+.hero{
+  display:grid;grid-template-columns:1fr 420px;
+  padding:0;flex-shrink:0;
+  border-bottom:1px solid var(--border2);
+  position:relative;min-height:280px;
+}
+
+/* LEFT hero */
+.hero-left{padding:28px 32px;display:flex;flex-direction:column;justify-content:center;position:relative;}
+.hero-number{
+  font-family:'Orbitron',monospace;font-size:13px;
+  color:var(--muted);letter-spacing:3px;margin-bottom:6px;
+}
+.hero-name{
+  font-family:'Orbitron',monospace;
+  font-size:46px;font-weight:900;
+  color:var(--blue2);
+  text-shadow:0 0 40px rgba(74,158,255,0.5),0 2px 0 rgba(0,0,0,0.5);
+  line-height:1;margin-bottom:16px;
+  letter-spacing:2px;
+}
+.hero-desc{
+  font-size:14px;color:var(--blue3);line-height:1.7;
+  max-width:420px;font-weight:400;
+  background:rgba(74,158,255,0.06);
+  border-left:3px solid rgba(74,158,255,0.4);
+  padding:12px 16px;border-radius:0 8px 8px 0;
+  margin-bottom:22px;
+}
+.hero-stats-row{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
+.hero-stat{display:flex;flex-direction:column;gap:3px;}
+.hero-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+.hero-stat-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--accent);}
+.type-pill{
+  padding:6px 20px;border-radius:8px;font-size:13px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+
+/* RIGHT hero — Pokémon image */
+.hero-right{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.hero-right::before{
+  content:'';position:absolute;
+  width:360px;height:360px;border-radius:50%;
+  background:radial-gradient(circle,var(--poke-glow,rgba(74,158,255,0.12)) 0%,transparent 70%);
+  animation:glowpulse 3s ease-in-out infinite;
+}
+@keyframes glowpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.7}}
+.hero-rings{
+  position:absolute;width:280px;height:280px;
+  border:1px solid rgba(74,158,255,0.07);border-radius:50%;
+  animation:spin 20s linear infinite;
+}
+.hero-rings::after{
+  content:'';position:absolute;inset:20px;
+  border:1px solid rgba(74,158,255,0.05);border-radius:50%;
+}
+.hero-img{
+  width:260px;height:260px;object-fit:contain;position:relative;z-index:2;
+  filter:drop-shadow(0 10px 30px var(--poke-glow,rgba(74,158,255,0.5)));
+  animation:float 3.5s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.02)}}
+.hero-img-fallback{font-size:140px;position:relative;z-index:2;animation:float 3.5s ease-in-out infinite;}
+.hero-shadow{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  width:120px;height:20px;z-index:1;
+  background:radial-gradient(ellipse,var(--poke-glow,rgba(74,158,255,0.3)) 0%,transparent 70%);
+  animation:shadowanim 3.5s ease-in-out infinite;
+}
+@keyframes shadowanim{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.6}50%{transform:translateX(-50%) scaleX(.6);opacity:.2}}
+
+/* ══ BOTTOM SECTION ══════════════════════════════════════════════════════ */
+.bottom{
+  flex:1;display:grid;grid-template-columns:1fr 380px;
+  overflow:hidden;
+}
+
+/* Evolutions */
+.evo-section{
+  padding:22px 28px;overflow-y:auto;
+  border-right:1px solid var(--border2);
+}
+.evo-section::-webkit-scrollbar{width:3px;}
+.evo-section::-webkit-scrollbar-thumb{background:rgba(74,158,255,.2);}
+.section-title{
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+  color:var(--blue2);letter-spacing:2px;margin-bottom:18px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(74,158,255,.3),transparent);}
+
+.evo-chain{display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.evo-card{
+  background:rgba(74,158,255,0.07);border:1px solid var(--border);
+  border-radius:14px;padding:16px 20px;text-align:center;
+  cursor:pointer;transition:all .3s;min-width:110px;
+  position:relative;overflow:hidden;
+}
+.evo-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,var(--blue) 0%,transparent 70%);
+  opacity:0;transition:opacity .3s;
+}
+.evo-card:hover::before,.evo-card.active::before{opacity:.08;}
+.evo-card:hover,.evo-card.active{
+  border-color:var(--blue2);
+  box-shadow:0 0 20px rgba(74,158,255,.25);
+  transform:translateY(-3px);
+}
+.evo-card.active{background:rgba(74,158,255,0.14);}
+.evo-img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(74,158,255,.3));transition:transform .3s;}
+.evo-card:hover .evo-img,.evo-card.active .evo-img{transform:scale(1.1);}
+.evo-num{font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px;}
+.evo-name{font-size:13px;font-weight:700;color:var(--text);margin-top:3px;}
+.evo-arrow{
+  font-size:20px;color:var(--blue);opacity:.4;margin:0 8px;
+  flex-shrink:0;
+}
+
+/* All Pokémon mini grid */
+.all-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:18px;}
+.mini-card{
+  background:rgba(74,158,255,.05);border:1px solid var(--border2);
+  border-radius:10px;padding:8px;text-align:center;cursor:pointer;
+  transition:all .25s;
+}
+.mini-card:hover{background:rgba(74,158,255,.12);border-color:var(--blue);transform:scale(1.05);}
+.mini-card.active{background:rgba(74,158,255,.15);border-color:var(--blue2);}
+.mini-img{width:48px;height:48px;object-fit:contain;}
+.mini-name{font-size:9px;color:var(--muted);margin-top:4px;font-weight:600;}
+
+/* Powers panel */
+.powers-section{padding:22px 24px;overflow-y:auto;}
+.powers-section::-webkit-scrollbar{width:3px;}
+.powers-section::-webkit-scrollbar-thumb{background:rgba(74,158,255,.2);}
+
+.power-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.power-name{font-size:13px;font-weight:600;color:var(--text);width:90px;flex-shrink:0;}
+.power-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;width:36px;text-align:right;flex-shrink:0;color:var(--blue2);}
+.power-track{flex:1;height:12px;background:rgba(74,158,255,.1);border-radius:6px;overflow:hidden;position:relative;}
+.power-fill{
+  height:100%;border-radius:6px;
+  transition:width 1.4s cubic-bezier(.25,.46,.45,.94);
+  position:relative;
+}
+.power-fill::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;
+  width:4px;background:rgba(255,255,255,.5);
+  border-radius:0 6px 6px 0;
+  box-shadow:0 0 6px rgba(255,255,255,.4);
+}
+
+/* rank badges */
+.rank-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+.rank-badge{
+  flex:1;background:rgba(74,158,255,.07);border:1px solid var(--border);
+  border-radius:10px;padding:10px 8px;text-align:center;
+  min-width:70px;
+}
+.rank-badge-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}
+.rank-badge-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;}
+
+/* type colors */
+.Fire{background:rgba(255,110,60,.2);color:#ff9068;border:1px solid rgba(255,110,60,.35);}
+.Water{background:rgba(70,150,255,.2);color:#70b8ff;border:1px solid rgba(70,150,255,.35);}
+.Grass{background:rgba(90,200,90,.2);color:#72e472;border:1px solid rgba(90,200,90,.35);}
+.Electric{background:rgba(255,210,40,.2);color:#ffd028;border:1px solid rgba(255,210,40,.35);}
+.Ghost{background:rgba(140,70,200,.2);color:#c080f0;border:1px solid rgba(140,70,200,.35);}
+.Fighting{background:rgba(210,110,50,.2);color:#e8a060;border:1px solid rgba(210,110,50,.35);}
+.Normal{background:rgba(180,180,180,.2);color:#c8c8c8;border:1px solid rgba(180,180,180,.35);}
+.Psychic{background:rgba(255,90,160,.2);color:#ff90c8;border:1px solid rgba(255,90,160,.35);}
+.Dragon{background:rgba(80,70,210,.2);color:#9090ff;border:1px solid rgba(80,70,210,.35);}
+.Fairy{background:rgba(255,150,200,.2);color:#ffb0d8;border:1px solid rgba(255,150,200,.35);}
+
+/* filter strip */
+.filter-strip{
+  padding:10px 16px 10px;border-bottom:1px solid var(--border2);
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex-shrink:0;
+  background:rgba(8,18,50,.4);
+}
+.filter-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-right:2px;}
+.f-btn{
+  padding:4px 11px;border-radius:14px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);
+  font-family:'Exo 2',sans-serif;font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.f-btn:hover{border-color:var(--blue);color:var(--blue2);}
+.f-btn.active{color:#06080f;font-weight:700;}
+
+/* KPI strip */
+.kpi-strip{
+  display:flex;gap:0;border-bottom:1px solid var(--border2);flex-shrink:0;
+  background:rgba(8,18,50,.6);
+}
+.kpi-item{
+  flex:1;padding:10px 16px;border-right:1px solid var(--border2);
+  display:flex;flex-direction:column;gap:2px;
+}
+.kpi-item:last-child{border-right:none;}
+.kpi-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+.kpi-val{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;}
+.kpi-sub{font-size:10px;color:var(--muted);}
+
+/* scanner line */
+.scanner{
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,.3),transparent);
+  animation:scanner 8s linear infinite;pointer-events:none;z-index:5;
+}
+@keyframes scanner{0%{top:-1px}100%{top:100%}}
+
+/* transitions */
+.fade-swap{animation:fadeSwap .35s ease;}
+@keyframes fadeSwap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo-wrap">
+    <div class="logo-ball"></div>
+    <div class="logo-text">POKÉDEX<span>Battle Analytics</span></div>
+  </div>
+  <div class="topbar-title">BATTLE INTELLIGENCE SYSTEM</div>
+  <div class="topbar-right">
+    <div class="tb-badge">⚡ 10 Pokémon</div>
+    <div class="tb-badge" id="topFilterBadge">All Types</div>
+    <button class="btn-export" onclick="exportExcel()">⬇ Export Excel</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-search">
+    <input class="search-box" type="text" placeholder="🔍  Search Pokémon..." id="searchBox" oninput="filterSearch(this.value)">
+  </div>
+  <div class="sidebar-list" id="sidebarList"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+  <div class="scanner"></div>
+
+  <!-- KPI strip -->
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi-item"><div class="kpi-lbl">Avg Attack</div><div class="kpi-val" id="kA" style="color:#f6ad55;">–</div><div class="kpi-sub" id="kAs">–</div></div>
+    <div class="kpi-item"><div class="kpi-lbl">Avg Defense</div><div class="kpi-val" id="kD" style="color:#63b3ed;">–</div><div class="kpi-sub" id="kDs">–</div></div>
+    <div class="kpi-item"><div class="kpi-lbl">Avg Speed</div><div class="kpi-val" id="kS" style="color:#68d391;">–</div><div class="kpi-sub" id="kSs">–</div></div>
+    <div class="kpi-item"><div class="kpi-lbl">Showing</div><div class="kpi-val" id="kC" style="color:#00e5ff;">10</div><div class="kpi-sub">of 10 Pokémon</div></div>
+  </div>
+
+  <!-- Filter strip -->
+  <div class="filter-strip">
+    <span class="filter-lbl">Type:</span>
+    <button class="f-btn active" data-type="all" onclick="filterType('all',this)">All</button>
+    <button class="f-btn Fire"     data-type="Fire"     onclick="filterType('Fire',this)">🔥 Fire</button>
+    <button class="f-btn Water"    data-type="Water"    onclick="filterType('Water',this)">💧 Water</button>
+    <button class="f-btn Grass"    data-type="Grass"    onclick="filterType('Grass',this)">🌿 Grass</button>
+    <button class="f-btn Electric" data-type="Electric" onclick="filterType('Electric',this)">⚡ Electric</button>
+    <button class="f-btn Ghost"    data-type="Ghost"    onclick="filterType('Ghost',this)">👻 Ghost</button>
+    <button class="f-btn Fighting" data-type="Fighting" onclick="filterType('Fighting',this)">👊 Fighting</button>
+    <button class="f-btn Normal"   data-type="Normal"   onclick="filterType('Normal',this)">⭐ Normal</button>
+    <button class="f-btn Psychic"  data-type="Psychic"  onclick="filterType('Psychic',this)">🔮 Psychic</button>
+    <button class="f-btn Dragon"   data-type="Dragon"   onclick="filterType('Dragon',this)">🐉 Dragon</button>
+    <button class="f-btn Fairy"    data-type="Fairy"    onclick="filterType('Fairy',this)">🌸 Fairy</button>
+  </div>
+
+  <!-- Hero + details -->
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+    <!-- HERO -->
+    <div class="hero" id="heroSection">
+      <div class="hero-left" id="heroLeft"></div>
+      <div class="hero-right" id="heroRight"></div>
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="bottom">
+      <div class="evo-section">
+        <div class="section-title">Evolutions</div>
+        <div class="evo-chain" id="evoChain"></div>
+        <div class="section-title" style="margin-top:20px;">All Pokémon</div>
+        <div class="all-grid" id="allGrid"></div>
+      </div>
+      <div class="powers-section" id="powersSection"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ── DATA ──────────────────────────────────────────────────────────── */
+const POKEMON = [
+  {
+    id:1,nome:"Sceptile",tipo:"Grass",atk:80,def:76,spd:62,
+    emoji:"🌿",dex:253,color:"#72e472",
+    desc:"Sceptile has seeds growing on its back. These seeds are said to be bursting with nutrients that revitalize trees. This Pokémon raises the trees in a forest with loving care.",
+    height:"1.7m",weight:"52.2 kg",
+    evolves:[{dex:252,name:"Treecko",num:"#252"},{dex:253,name:"Grovyle",num:"#253"},{dex:254,name:"Sceptile",num:"#254"}],
+    advantage:"Water",weakness:"Fire"
+  },
+  {
+    id:2,nome:"Charizard",tipo:"Fire",atk:93,def:92,spd:65,
+    emoji:"🔥",dex:6,color:"#ff9068",
+    desc:"Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. It never turns its fiery breath on any opponent weaker than itself.",
+    height:"1.7m",weight:"90.5 kg",
+    evolves:[{dex:4,name:"Charmander",num:"#004"},{dex:5,name:"Charmeleon",num:"#005"},{dex:6,name:"Charizard",num:"#006"}],
+    advantage:"Grass",weakness:"Water"
+  },
+  {
+    id:3,nome:"Pikachu",tipo:"Electric",atk:79,def:90,spd:113,
+    emoji:"⚡",dex:25,color:"#ffd028",
+    desc:"Pikachu that can generate powerful electricity have cheek sacs that are extra soft and super stretchy. Whenever Pikachu comes across something new, it blasts it with a jolt of electricity.",
+    height:"0.4m",weight:"6.0 kg",
+    evolves:[{dex:172,name:"Pichu",num:"#172"},{dex:25,name:"Pikachu",num:"#025"},{dex:26,name:"Raichu",num:"#026"}],
+    advantage:"Water",weakness:"Ground"
+  },
+  {
+    id:4,nome:"Gengar",tipo:"Ghost",atk:86,def:88,spd:73,
+    emoji:"👻",dex:94,color:"#c080f0",
+    desc:"Gengar is always hiding in shadows. It is said that if Gengar is nearby, it will chill the air by nearly 10 degrees Fahrenheit. Laughter echoes around it as it haunts.",
+    height:"1.5m",weight:"40.5 kg",
+    evolves:[{dex:92,name:"Gastly",num:"#092"},{dex:93,name:"Haunter",num:"#093"},{dex:94,name:"Gengar",num:"#094"}],
+    advantage:"Psychic",weakness:"Ghost"
+  },
+  {
+    id:5,nome:"Blastoise",tipo:"Water",atk:71,def:82,spd:113,
+    emoji:"💧",dex:9,color:"#70b8ff",
+    desc:"Blastoise has water spouts that protrude from its shell. The water spouts are very accurate. They can shoot bullets of water with enough accuracy to strike empty cans from a distance of over 160 feet.",
+    height:"1.6m",weight:"85.5 kg",
+    evolves:[{dex:7,name:"Squirtle",num:"#007"},{dex:8,name:"Wartortle",num:"#008"},{dex:9,name:"Blastoise",num:"#009"}],
+    advantage:"Fire",weakness:"Electric"
+  },
+  {
+    id:6,nome:"Lucario",tipo:"Fighting",atk:76,def:82,spd:84,
+    emoji:"👊",dex:448,color:"#e8a060",
+    desc:"Lucario reads its opponent's feelings with its aura waves. It understands human speech. By reading auras, it can predict movements, and it's also possible for Lucario to speak to humans.",
+    height:"1.2m",weight:"54.0 kg",
+    evolves:[{dex:447,name:"Riolu",num:"#447"},{dex:448,name:"Lucario",num:"#448"}],
+    advantage:"Normal",weakness:"Psychic"
+  },
+  {
+    id:7,nome:"Snorlax",tipo:"Normal",atk:95,def:65,spd:95,
+    emoji:"😴",dex:143,color:"#c8c8c8",
+    desc:"Snorlax's typical day consists of nothing more than eating and sleeping. It is such a docile Pokémon that there are children who use its expansive belly as a place to play.",
+    height:"2.1m",weight:"460.0 kg",
+    evolves:[{dex:446,name:"Munchlax",num:"#446"},{dex:143,name:"Snorlax",num:"#143"}],
+    advantage:"Ghost",weakness:"Fighting"
+  },
+  {
+    id:8,nome:"Gardevoir",tipo:"Psychic",atk:88,def:90,spd:113,
+    emoji:"🌟",dex:282,color:"#ff90c8",
+    desc:"Gardevoir has the ability to predict the future. If its Trainer is in danger, this Pokémon is said to unleash its psychokinetic energy at full power. It can distort dimensions to protect.",
+    height:"1.6m",weight:"48.4 kg",
+    evolves:[{dex:280,name:"Ralts",num:"#280"},{dex:281,name:"Kirlia",num:"#281"},{dex:282,name:"Gardevoir",num:"#282"}],
+    advantage:"Fighting",weakness:"Ghost"
+  },
+  {
+    id:9,nome:"Salamence",tipo:"Dragon",atk:72,def:75,spd:97,
+    emoji:"🐉",dex:373,color:"#9090ff",
+    desc:"Salamence came about as a result of a strong, long-held dream of growing wings. It is said that this powerful desire triggered a sudden mutation in its cells, causing it to sprout wings.",
+    height:"1.5m",weight:"102.6 kg",
+    evolves:[{dex:371,name:"Bagon",num:"#371"},{dex:372,name:"Shelgon",num:"#372"},{dex:373,name:"Salamence",num:"#373"}],
+    advantage:"Fairy",weakness:"Ice"
+  },
+  {
+    id:10,nome:"Togekiss",tipo:"Fairy",atk:97,def:62,spd:68,
+    emoji:"🕊️",dex:468,color:"#ffb0d8",
+    desc:"Togekiss shares many blessings with people who respect one another's rights and maintain a well-ordered life. It will never appear if there is conflict or hostility nearby.",
+    height:"1.5m",weight:"38.0 kg",
+    evolves:[{dex:175,name:"Togepi",num:"#175"},{dex:176,name:"Togetic",num:"#176"},{dex:468,name:"Togekiss",num:"#468"}],
+    advantage:"Dragon",weakness:"Steel"
+  }
+];
+
+const imgUrl = dex => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex}.png`;
+const TYPE_COLOR = {
+  Fire:"#ff9068",Water:"#70b8ff",Grass:"#72e472",Electric:"#ffd028",
+  Ghost:"#c080f0",Fighting:"#e8a060",Normal:"#c8c8c8",
+  Psychic:"#ff90c8",Dragon:"#9090ff",Fairy:"#ffb0d8"
+};
+
+let filtered = [...POKEMON];
+let currentFilter = 'all';
+let selected = POKEMON[4]; // Blastoise default (matches reference)
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────── */
+function renderSidebar() {
+  const list = document.getElementById('sidebarList');
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  list.innerHTML = '';
+  let items = currentFilter === 'all' ? POKEMON : POKEMON.filter(p=>p.tipo===currentFilter);
+  if(search) items = items.filter(p=>p.nome.toLowerCase().includes(search));
+  items.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'list-item' + (selected?.id===p.id?' active':'');
+    div.onclick = () => selectPokemon(p);
+    div.innerHTML = `
+      <div class="list-dot" style="background:${selected?.id===p.id?p.color:'transparent'};border-color:${p.color};box-shadow:${selected?.id===p.id?`0 0 6px ${p.color}`:'none'};"></div>
+      <span>${p.nome}</span>
+      <span class="list-num">#${String(p.dex).padStart(3,'0')}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function filterSearch(val){ renderSidebar(); }
+
+/* ── FILTER TYPE ─────────────────────────────────────────────────── */
+function filterType(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.f-btn').forEach(b=>{b.classList.remove('active');b.style.cssText='';});
+  btn.classList.add('active');
+  const col = TYPE_COLOR[type]||'#4a9eff';
+  if(type!=='all'){btn.style.background=col;btn.style.color='#06080f';btn.style.borderColor=col;}
+  filtered = type==='all'?[...POKEMON]:POKEMON.filter(p=>p.tipo===type);
+  document.getElementById('topFilterBadge').textContent = type==='all'?'All Types':type;
+  updateKPIs();
+  renderSidebar();
+  renderAllGrid();
+}
+
+/* ── KPIs ────────────────────────────────────────────────────────── */
+function updateKPIs(){
+  const fp = filtered;
+  if(!fp.length)return;
+  const avg=k=>+(fp.reduce((s,p)=>s+p[k],0)/fp.length).toFixed(1);
+  const top=k=>fp.reduce((a,b)=>a[k]>b[k]?a:b);
+  document.getElementById('kA').textContent=avg('atk');
+  document.getElementById('kD').textContent=avg('def');
+  document.getElementById('kS').textContent=avg('spd');
+  document.getElementById('kC').textContent=fp.length;
+  document.getElementById('kAs').textContent=`Best: ${top('atk').nome} (${top('atk').atk})`;
+  document.getElementById('kDs').textContent=`Best: ${top('def').nome} (${top('def').def})`;
+  document.getElementById('kSs').textContent=`Best: ${top('spd').nome} (${top('spd').spd})`;
+}
+
+/* ── SELECT POKEMON ──────────────────────────────────────────────── */
+function selectPokemon(p){
+  selected = p;
+  renderHero();
+  renderEvolutions();
+  renderPowers();
+  renderAllGrid();
+  renderSidebar();
+}
+
+/* ── HERO ────────────────────────────────────────────────────────── */
+function renderHero(){
+  const p = selected;
+  const tc = p.color;
+  document.getElementById('heroLeft').className = 'hero-left fade-swap';
+  document.getElementById('heroLeft').innerHTML = `
+    <div class="hero-number"># ${String(p.dex).padStart(3,'0')}</div>
+    <div class="hero-name">${p.nome}</div>
+    <div class="hero-desc">${p.desc}</div>
+    <div class="hero-stats-row">
+      <div class="hero-stat">
+        <div class="hero-stat-lbl">Height</div>
+        <div class="hero-stat-val">${p.height}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-lbl">Weight</div>
+        <div class="hero-stat-val">${p.weight}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-lbl">Score</div>
+        <div class="hero-stat-val">${p.atk+p.def+p.spd}</div>
+      </div>
+      <span class="type-pill ${p.tipo}" style="font-size:13px;padding:6px 20px;">${p.tipo}</span>
+    </div>`;
+
+  const heroRight = document.getElementById('heroRight');
+  heroRight.style.setProperty('--poke-glow', tc+'50');
+  heroRight.innerHTML = `
+    <div class="hero-rings"></div>
+    <img class="hero-img" src="${imgUrl(p.dex)}" alt="${p.nome}"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <div class="hero-img-fallback" style="display:none;">${p.emoji}</div>
+    <div class="hero-shadow"></div>`;
+}
+
+/* ── EVOLUTIONS ──────────────────────────────────────────────────── */
+function renderEvolutions(){
+  const p = selected;
+  const chain = document.getElementById('evoChain');
+  chain.innerHTML = '';
+  p.evolves.forEach((e, i) => {
+    if(i>0){
+      const arr = document.createElement('div');
+      arr.className='evo-arrow';arr.textContent='→';
+      chain.appendChild(arr);
+    }
+    const card = document.createElement('div');
+    card.className='evo-card'+(e.dex===p.dex?' active':'');
+    card.onclick=()=>{
+      const found=POKEMON.find(x=>x.dex===e.dex);
+      if(found) selectPokemon(found);
+    };
+    card.innerHTML=`
+      <img class="evo-img" src="${imgUrl(e.dex)}" alt="${e.name}"
+           onerror="this.style.fontSize='40px';this.outerHTML='<div style=\\'font-size:40px;\\'>🎮</div>'">
+      <div class="evo-num">${e.num}</div>
+      <div class="evo-name">${e.name}</div>`;
+    chain.appendChild(card);
+  });
+}
+
+/* ── POWERS PANEL ────────────────────────────────────────────────── */
+function renderPowers(){
+  const p = selected;
+  const tc = p.color;
+  const maxA=Math.max(...POKEMON.map(x=>x.atk));
+  const maxD=Math.max(...POKEMON.map(x=>x.def));
+  const maxS=Math.max(...POKEMON.map(x=>x.spd));
+  const atkRank=[...POKEMON].sort((a,b)=>b.atk-a.atk).findIndex(x=>x.id===p.id)+1;
+  const defRank=[...POKEMON].sort((a,b)=>b.def-a.def).findIndex(x=>x.id===p.id)+1;
+  const spdRank=[...POKEMON].sort((a,b)=>b.spd-a.spd).findIndex(x=>x.id===p.id)+1;
+  const totalRank=[...POKEMON].sort((a,b)=>(b.atk+b.def+b.spd)-(a.atk+a.def+a.spd)).findIndex(x=>x.id===p.id)+1;
+  const rnkIcon=r=>r===1?'🥇':r===2?'🥈':r===3?'🥉':`#${r}`;
+
+  const powers=[
+    {name:'Attack',val:p.atk,pct:p.atk/maxA*100,color:'#f6ad55,#fc8181'},
+    {name:'Defense',val:p.def,pct:p.def/maxD*100,color:'#63b3ed,#90cdf4'},
+    {name:'Speed',val:p.spd,pct:p.spd/maxS*100,color:'#68d391,#9ae6b4'},
+  ];
+
+  const el=document.getElementById('powersSection');
+  el.innerHTML=`
+    <div class="section-title">Powers</div>
+    ${powers.map(pw=>`
+      <div class="power-row">
+        <div class="power-name">${pw.name}</div>
+        <div class="power-val" style="color:${pw.color.split(',')[0]};">${pw.val}</div>
+        <div class="power-track">
+          <div class="power-fill" style="width:0%;background:linear-gradient(90deg,${pw.color});" data-target="${pw.pct.toFixed(0)}"></div>
+        </div>
+      </div>`).join('')}
+
+    <div class="section-title" style="margin-top:18px;">Rankings</div>
+    <div class="rank-row">
+      <div class="rank-badge">
+        <div class="rank-badge-lbl">Attack</div>
+        <div class="rank-badge-val" style="color:#f6ad55;">${rnkIcon(atkRank)}</div>
+      </div>
+      <div class="rank-badge">
+        <div class="rank-badge-lbl">Defense</div>
+        <div class="rank-badge-val" style="color:#63b3ed;">${rnkIcon(defRank)}</div>
+      </div>
+      <div class="rank-badge">
+        <div class="rank-badge-lbl">Speed</div>
+        <div class="rank-badge-val" style="color:#68d391;">${rnkIcon(spdRank)}</div>
+      </div>
+      <div class="rank-badge">
+        <div class="rank-badge-lbl">Overall</div>
+        <div class="rank-badge-val" style="color:${tc};">${rnkIcon(totalRank)}</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px;">Battle Info</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="rank-badge" style="text-align:left;padding:10px 12px;">
+        <div class="rank-badge-lbl">✅ Advantage</div>
+        <div style="font-size:13px;font-weight:700;margin-top:4px;">
+          <span class="type-pill ${p.advantage}" style="padding:3px 10px;font-size:11px;">${p.advantage}</span>
+        </div>
+      </div>
+      <div class="rank-badge" style="text-align:left;padding:10px 12px;">
+        <div class="rank-badge-lbl">❌ Weakness</div>
+        <div style="font-size:13px;font-weight:700;margin-top:4px;">
+          <span class="type-pill ${p.weakness}" style="padding:3px 10px;font-size:11px;">${p.weakness}</span>
+        </div>
+      </div>
+    </div>`;
+
+  // animate bars
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      el.querySelectorAll('.power-fill[data-target]').forEach(b=>{b.style.width=b.dataset.target+'%';});
+    },80);
+  });
+}
+
+/* ── ALL GRID ────────────────────────────────────────────────────── */
+function renderAllGrid(){
+  const grid = document.getElementById('allGrid');
+  grid.innerHTML = '';
+  filtered.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='mini-card'+(selected?.id===p.id?' active':'');
+    d.onclick=()=>selectPokemon(p);
+    d.innerHTML=`
+      <img class="mini-img" src="${imgUrl(p.dex)}" alt="${p.nome}"
+           onerror="this.style.fontSize='30px';this.outerHTML='<div style=\\'font-size:30px;\\'>${p.emoji}</div>'">
+      <div class="mini-name">${p.nome}</div>`;
+    grid.appendChild(d);
+  });
+}
+
+/* ── EXCEL EXPORT ────────────────────────────────────────────────── */
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['#','Name','Type','Attack','Defense','Speed','Total Score','Advantage','Weakness','Height','Weight'],
+    ...POKEMON.map((p,i)=>[i+1,p.nome,p.tipo,p.atk,p.def,p.spd,p.atk+p.def+p.spd,p.advantage,p.weakness,p.height,p.weight])
+  ]);
+  ws['!cols']=[{wch:4},{wch:12},{wch:10},{wch:9},{wch:9},{wch:8},{wch:12},{wch:12},{wch:12},{wch:9},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'Pokémon Data');
+
+  const ws2=XLSX.utils.aoa_to_sheet([
+    ['KPI','Value','Top Pokémon'],
+    ['Avg Attack',+(POKEMON.reduce((s,p)=>s+p.atk,0)/POKEMON.length).toFixed(1),'Togekiss (97)'],
+    ['Avg Defense',+(POKEMON.reduce((s,p)=>s+p.def,0)/POKEMON.length).toFixed(1),'Charizard (92)'],
+    ['Avg Speed',+(POKEMON.reduce((s,p)=>s+p.spd,0)/POKEMON.length).toFixed(1),'Pikachu/Blastoise/Gardevoir (113)'],
+    ['Max Total Score',Math.max(...POKEMON.map(p=>p.atk+p.def+p.spd)),'Charizard (250)'],
+    ['Total Pokémon',POKEMON.length,'–'],
+  ]);
+  XLSX.utils.book_append_sheet(wb,ws2,'KPIs');
+  XLSX.writeFile(wb,'Pokemon_Battle_Dashboard.xlsx');
+}
+
+/* ── INIT ────────────────────────────────────────────────────────── */
+updateKPIs();
+renderSidebar();
+selectPokemon(selected);
+</script>
+</body>
+</html>
